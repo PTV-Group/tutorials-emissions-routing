@@ -33,7 +33,7 @@ $(document).ready(function() {
           trackResize: false
         },
         [
-          {header: 'ApiKey', value: 'YOUR_API_KEY'}
+          {header: 'ApiKey', value: api_key}
         ]).addTo(map);
     map.on('click', onMapClick);
   
