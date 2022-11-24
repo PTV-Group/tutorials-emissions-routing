@@ -27,10 +27,7 @@ $(document).ready(function () {
     })
     .addTo(map);
   const tileLayer = new L.tileLayer(
-    addDeploymentHost(
-      "developer",
-      "/apiproxy/rastermaps/v1/image-tiles/{z}/{x}/{y}?size={tileSize}"
-    ),
+    "https://api.myptv.com/rastermaps/v1/image-tiles/{z}/{x}/{y}?size={tileSize}",
     {
       attribution: "© " + new Date().getFullYear() + ", PTV Group, HERE",
       tileSize: 256,
@@ -41,10 +38,7 @@ $(document).ready(function () {
   map.on("click", onMapClick);
 
   fetch(
-    addDeploymentHost(
-      "developer",
-      "/apiproxy/data/v1/vehicle-profiles/predefined"
-    ),
+    "https://api.myptv.com/data/v1/vehicle-profiles/predefined",
     {
       method: "GET",
       headers: {
@@ -126,7 +120,7 @@ $(document).ready(function () {
     });
     if (waypoints.length > 1) {
       fetch(
-        addDeploymentHost("developer", "/apiproxy/routing/v1/routes") +
+        "https://api.myptv.com/routing/v1/routes" +
           getQuery(waypoints),
         {
           method: "GET",
@@ -170,6 +164,9 @@ $(document).ready(function () {
     query +=
       "&vehicle[dualFuelRatio]=" +
       document.getElementById("dualFuelRatio").value;
+    query +=
+      "&vehicle[emissionStandard]=" +
+      document.getElementById("emissionStandards").value;
     query +=
       "&vehicle[bioFuelRatio]=" + document.getElementById("bioFuelRatio").value;
     query +=
@@ -276,7 +273,7 @@ $(document).ready(function () {
                     <label for="emissionProfile" style="display: block;">Emission Profile</label>
                     <select name="emissionProfile" id="emissionProfile" style="display: block; width: 100%;">
                         <option value="EMISSIONS_ISO14083_2022">ISO14083_2022_EUROPE</option>
-                        <option value="EMISSIONS_ISO14083_2022_DEFAULT_CONSUMPTION">ISO14083_2022_DEFAULT_CONSUMPTION</option>
+                        <option value="EMISSIONS_ISO14083_2022_DEFAULT_CONSUMPTION">ISO14083_2022_DEFAULT_CONSUMPTION</option>                    
                         <option value="EMISSIONS_EN16258_2012">EN16258_2012</option>
                         <option value="EMISSIONS_EN16258_2012_HBEFA">EN16258_2012_HBEFA</option>
                         <option value="EMISSIONS_FRENCH_CO2E_DECREE_2017_639">FRENCH_CO2E_DECREE_2017_639</option>
@@ -313,10 +310,29 @@ $(document).ready(function () {
                     </select>
                 </div>
                 <div>
+                  <label for="emissionStandards" id="emissionStandardsLabel" style="display: block;">Emission standards</label>
+                  <select name="emissionStandards" id="emissionStandards" style="display: block; width: 100%;">
+                      <option value="EURO_0">EURO_0</option>
+                      <option value="EURO_1">EURO_1</option>
+                      <option value="EURO_2">EURO_2</option>
+                      <option value="EURO_3">EURO_3</option>
+                      <option value="EURO_4">EURO_4</option>
+                      <option value="EURO_5">EURO_5</option>
+                      <option value="EURO_EEV">EURO_EEV</option>
+                      <option value="EURO_6">EURO_6</option>
+                      <option value="EURO_6C">EURO_6c</option>
+                      <option value="EURO_6D_TEMP">EURO_6d_Temp</option>
+                      <option value="EURO_6D">EURO_6d</option>
+                      <option value="EURO_6E">EURO_6e</option>
+                      <option value="EURO_7">EURO_7</option>
+                      <option value="NONE">NONE</option>
+                  </select>
+                </div>
+                <div>
                     <label for="electricityType" id="electricityTypeLabel" style="display: block;">Electricity Type</label>
                     <select name="electricityType" id="electricityType" style="display: block; width: 100%;">
                     <option value="BATTERY">BATTERY</option>
-                    <option value="HYDROGEN_FUEL_CELL">YDROGEN_FUEL_CELL</option>
+                    <option value="HYDROGEN_FUEL_CELL">HYDROGEN_FUEL_CELL</option>
                     <option value="NONE">None</option>
                     </select>
                 </div>
@@ -366,6 +382,9 @@ $(document).ready(function () {
       .addEventListener("change", calculateRoute);
     document
       .getElementById("fuelType")
+      .addEventListener("change", calculateRoute);
+    document
+      .getElementById("emissionStandards")
       .addEventListener("change", calculateRoute);
     document
       .getElementById("electricityType")
