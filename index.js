@@ -319,13 +319,14 @@ $(document).ready(function () {
                       <option value="EURO_4">EURO_4</option>
                       <option value="EURO_5">EURO_5</option>
                       <option value="EURO_EEV">EURO_EEV</option>
-                      <option value="EURO_6">EURO_6</option>
-                      <option value="EURO_6C">EURO_6c</option>
-                      <option value="EURO_6D_TEMP">EURO_6d_Temp</option>
-                      <option value="EURO_6D">EURO_6d</option>
-                      <option value="EURO_6E">EURO_6e</option>
+                      <option value="EURO_6" selected>EURO_6</option>
+                      <option value="EURO_6C">EURO_6C</option>
+                      <option value="EURO_6D_TEMP">EURO_6D_TEMP</option>
+                      <option value="EURO_6D">EURO_6D</option>
+                      <option value="EURO_6E">EURO_6E</option>
                       <option value="EURO_7">EURO_7</option>
                       <option value="NONE">NONE</option>
+                      <option value="">NoValue</option>
                   </select>
                 </div>
                 <div>
