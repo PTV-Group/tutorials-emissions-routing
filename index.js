@@ -272,7 +272,7 @@ $(document).ready(function () {
                 <div>
                     <label for="emissionProfile" style="display: block;">Emission Profile</label>
                     <select name="emissionProfile" id="emissionProfile" style="display: block; width: 100%;">
-                        <option value="EMISSIONS_ISO14083_2022">ISO14083_2022_EUROPE</option>
+                        <option value="EMISSIONS_ISO14083_2022">ISO14083_2022</option>
                         <option value="EMISSIONS_ISO14083_2022_DEFAULT_CONSUMPTION">ISO14083_2022_DEFAULT_CONSUMPTION</option>                    
                         <option value="EMISSIONS_EN16258_2012">EN16258_2012</option>
                         <option value="EMISSIONS_EN16258_2012_HBEFA">EN16258_2012_HBEFA</option>
@@ -326,7 +326,6 @@ $(document).ready(function () {
                       <option value="EURO_6E">EURO_6E</option>
                       <option value="EURO_7">EURO_7</option>
                       <option value="NONE">NONE</option>
-                      <option value="">NoValue</option>
                   </select>
                 </div>
                 <div>
