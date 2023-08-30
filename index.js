@@ -272,8 +272,8 @@ $(document).ready(function () {
                 <div>
                     <label for="emissionProfile" style="display: block;">Emission Profile</label>
                     <select name="emissionProfile" id="emissionProfile" style="display: block; width: 100%;">
-                        <option value="EMISSIONS_ISO14083_2022">ISO14083_2022</option>
-                        <option value="EMISSIONS_ISO14083_2022_DEFAULT_CONSUMPTION">ISO14083_2022_DEFAULT_CONSUMPTION</option>                    
+                        <option value="EMISSIONS_ISO14083_2023">ISO14083_2023</option>
+                        <option value="EMISSIONS_ISO14083_2023_DEFAULT_CONSUMPTION">ISO14083_2023_DEFAULT_CONSUMPTION</option>                    
                         <option value="EMISSIONS_EN16258_2012">EN16258_2012</option>
                         <option value="EMISSIONS_EN16258_2012_HBEFA">EN16258_2012_HBEFA</option>
                         <option value="EMISSIONS_FRENCH_CO2E_DECREE_2017_639">FRENCH_CO2E_DECREE_2017_639</option>
