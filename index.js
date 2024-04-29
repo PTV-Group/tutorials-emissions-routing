@@ -267,10 +267,10 @@ $(document).ready(function () {
     routingControl.onAdd = function (map) {
       const div = L.DomUtil.create("div", "routing-control");
       const html = `
-            <h2>Emission Routing</h2>
+            <h2>Emission Calculation</h2>
             <div>
                 <div>
-                    <label for="emissionProfile" style="display: block;">Emission Profile</label>
+                    <label for="emissionProfile" style="display: block;">Emission Calculation Method</label>
                     <select name="emissionProfile" id="emissionProfile" style="display: block; width: 100%;">
                         <option value="EMISSIONS_ISO14083_2023">ISO14083_2023</option>
                         <option value="EMISSIONS_ISO14083_2023_DEFAULT_CONSUMPTION">ISO14083_2023_DEFAULT_CONSUMPTION</option>                    

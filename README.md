@@ -1,4 +1,4 @@
-# Emissions Routing
+# Emission Calculation
 Display a map, select a vehicle and an emission method, and calculate a route with emissions between waypoints.</br>
 </br>
 PTV Developer APIs used in this tutorial:
