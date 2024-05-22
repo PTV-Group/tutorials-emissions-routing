@@ -1,18 +1,18 @@
 body,
 html {
-  border: 0;
-  padding: 0;
-  margin: 0;
+    border: 0;
+    padding: 0;
+    margin: 0;
 }
 
 p {
-  font-size: 1vw !important;
-  line-height: 1.5vw !important;
+    font-size: 1vw !important;
+    line-height: 1.5vw !important;
 }
 
 table, th, td {
-  border: 1px solid black;
-  border-collapse: collapse;
+    border: 1px solid black;
+    border-collapse: collapse;
 }
 
 #map {
@@ -41,26 +41,10 @@ table, th, td {
 
 .result-control-left,
 .summary-control {
-  width: 270px;
+    width: 270px;
 }
 
 #emissionsCostsTable,
 #summaryTable {
     width: 100%;
-}
-
-.banner {
-  position: fixed;
-  left: 50%;
-  transform: translateX(-50%);
-  bottom: 5px;
-  background-color: #ffffff;
-  padding-left: 30px;
-  padding-right: 30px;
-  border-radius: 15px;
-  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
-}
-
-.banner p {
-  margin-block: 5px;
 }

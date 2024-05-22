@@ -3,73 +3,39 @@
 /* eslint-disable @ptvgroup/linguijs/string-is-marked-for-translation */
 /* eslint-disable no-prototype-builtins */
 const api_key = "YOUR_API_KEY";
-
-const units = {
-  fuelConsumption: "kg",
-  co2eTankToWheel: "kg",
-  co2eWellToWheel: "kg",
-  energyUseTankToWheel: "MJ",
-  energyUseWellToWheel: "MJ",
-  electricityConsumption: "kWh",
-};
+const tileURL = "https://api.myptv.com/rastermaps/v1/image-tiles/{z}/{x}/{y}?size={tileSize}";
+const routesURL = "https://api.myptv.com/routing/v1/routes";
+const predefinedProfilesURL = "https://api.myptv.com/data/v1/vehicle-profiles/predefined";
 
 $(document).ready(function () {
-  let profiles = [];
   const coordinate = L.latLng(49, 8.4);
+
   const map = new L.Map("map", {
     center: coordinate,
     zoom: 13,
     zoomControl: false,
   });
-  L.control
-    .zoom({
-      position: "bottomright",
-    })
-    .addTo(map);
-  const tileLayer = new L.tileLayer(
-    "https://api.myptv.com/rastermaps/v1/image-tiles/{z}/{x}/{y}?size={tileSize}",
-    {
+
+  L.control.zoom({ position: "bottomright" }).addTo(map);
+
+  L.tileLayer(tileURL, {
       attribution: "© " + new Date().getFullYear() + ", PTV Group, HERE",
       tileSize: 256,
       trackResize: false,
     },
     [{ header: "ApiKey", value: api_key }]
   ).addTo(map);
+
+  // Adding Waypoints to the Map
+
   map.on("click", onMapClick);
-
-  fetch(
-    "https://api.myptv.com/data/v1/vehicle-profiles/predefined",
-    {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        apiKey: api_key,
-      },
-    }
-  )
-    .then((res, err) => {
-      return res.json();
-    })
-    .then((res, err) => {
-      if (err) {
-        console.log(err);
-      } else {
-        profiles = res.profiles.filter((p) => {
-          return p.name != "PEDESTRIAN" && p.name != "BICYCLE";
-        });
-        addControls();
-      }
-    });
-
-  addSummaryControl();
-  addEmissionsResultControl();
-  addDescriptionBanner();
 
   function onMapClick(e) {
     const marker = L.marker(e.latlng).addTo(map);
     marker.on("contextmenu", removeMarker);
     calculateRoute();
   }
+
   function removeMarker(e) {
     map.eachLayer((layer) => {
       if (layer instanceof L.Marker && layer._latlng === e.latlng) {
@@ -78,189 +44,19 @@ $(document).ready(function () {
     });
     calculateRoute();
   }
-  function fetchRoute() {
-    if (document.getElementById("emissionProfile").value.includes("HBEFA")) {
-      document.getElementById("averageFuelConsumption").disabled = true;
-      document.getElementById("fuelType").disabled = true;
-      document.getElementById("fuelTypeLabel").textContent =
-        "Fuel Type, not supported with HBEFA";
-      document.getElementById("averageFuelConsumptionLabel").textContent =
-        "Fuel Consumption (l / 100km), taken from HBEFA";
-    } else {
-      const profileName = document.getElementById("vehicleProfile").value;
-      const profile = profiles.find((e) => {
-        return e.name === profileName;
-      });
-      document.getElementById("fuelTypeLabel").textContent = "Fuel Type";
-      document.getElementById("averageFuelConsumptionLabel").textContent =
-        "Fuel Consumption (l / 100km)";
-      if (
-        profile?.vehicle?.fuelType &&
-        profile?.vehicle?.averageFuelConsumption
-      ) {
-        document.getElementById("averageFuelConsumption").disabled = false;
-        document.getElementById("fuelType").disabled = false;
-        document.getElementById("fuelType").value = profile.vehicle.fuelType;
-        document.getElementById("averageFuelConsumption").value =
-          profile.vehicle.averageFuelConsumption;
+
+  // Adding controls to manipulate the emission calculation
+
+  fetch(predefinedProfilesURL, {method: "GET", headers: {apiKey: api_key}})
+    .then((response) => response.json())
+    .then((response, error) => {
+      if (error) {
+        console.log(error);
       } else {
-        document.getElementById("averageFuelConsumption").disabled = true;
-        document.getElementById("fuelType").disabled = true;
-      }
-    }
-    calculateRoute();
-  }
-
-  function calculateRoute() {
-    const waypoints = [];
-    map.eachLayer((layer) => {
-      if (layer instanceof L.Marker) {
-        waypoints.push(layer._latlng);
+        profiles = response.profiles.filter((p) => p.name !== "PEDESTRIAN" && p.name !== "BICYCLE");
+        addControls();
       }
     });
-    if (waypoints.length > 1) {
-      fetch(
-        "https://api.myptv.com/routing/v1/routes" +
-          getQuery(waypoints),
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            apiKey: api_key,
-          },
-        }
-      ).then((response) =>
-        response.json().then((result) => {
-          clearResults();
-          displayPolyline(JSON.parse(result.polyline));
-          displayResults(result);
-        })
-      );
-    } else {
-      clearResults();
-    }
-  }
-
-  function getQuery(waypoints) {
-    let query = "?results=POLYLINE";
-
-    const results = [];
-
-    results.push(document.getElementById("emissionProfile").value);
-
-    if (results.length > 0) {
-      query += "," + results.join();
-    }
-
-    query += "&profile=" + document.getElementById("vehicleProfile").value;
-    query +=
-      "&vehicle[averageElectricityConsumption]=" +
-      document.getElementById("averageElectricityConsumption").value;
-    query +=
-      "&vehicle[engineType]=" + document.getElementById("engineType").value;
-    query +=
-      "&vehicle[electricityType]=" +
-      document.getElementById("electricityType").value;
-    query +=
-      "&vehicle[dualFuelRatio]=" +
-      document.getElementById("dualFuelRatio").value;
-    query +=
-      "&vehicle[emissionStandard]=" +
-      document.getElementById("emissionStandards").value;
-    query +=
-      "&vehicle[bioFuelRatio]=" + document.getElementById("bioFuelRatio").value;
-    query +=
-      "&vehicle[hybridRatio]=" + document.getElementById("hybridRatio").value;
-    if (!document.getElementById("emissionProfile").value.includes("HBEFA")) {
-      query +=
-        "&vehicle[averageFuelConsumption]=" +
-        document.getElementById("averageFuelConsumption").value;
-      query +=
-        "&vehicle[fuelType]=" + document.getElementById("fuelType").value;
-    }
-
-    waypoints.forEach((waypoint) => {
-      query += "&waypoints=" + waypoint.lat + "," + waypoint.lng;
-    });
-    return query;
-  }
-
-  function clearPolyline() {
-    if (polylineLayer !== null) {
-      map.removeLayer(polylineLayer);
-    }
-  }
-
-  var polylineLayer = null;
-  function displayPolyline(polyline) {
-    const myStyle = {
-      color: "#2882C8",
-      weight: 5,
-      opacity: 0.65,
-    };
-
-    polylineLayer = L.geoJSON(polyline, {
-      style: myStyle,
-    }).addTo(map);
-
-    map.fitBounds(polylineLayer.getBounds());
-  }
-  function displayResults(result) {
-    displaySummary(result);
-
-    Object.keys(result.emissions).forEach((key) => {
-      displayEmissions(result.emissions[key]);
-    });
-  }
-
-  function displayEmissions(emissions) {
-    const table = document.createElement("table");
-    table.id = "emissionsReportTableWrapper";
-    const thead = document.createElement("thead");
-    thead.innerHTML = `        
-        <tr>
-            <td>Type</td>
-            <td>Amount</td>
-        </tr>`;
-    table.appendChild(thead);
-    const tbody = document.createElement("tbody");
-    for (const key in emissions) {
-      if (emissions.hasOwnProperty(key)) {
-        const tr = document.createElement("tr");
-        const th = document.createElement("td");
-        th.textContent = key;
-        const td = document.createElement("td");
-        td.textContent = `${emissions[key].toFixed(4)} ${units[key]}`;
-        tr.appendChild(th);
-        tr.appendChild(td);
-        tbody.appendChild(tr);
-      }
-    }
-    table.appendChild(tbody);
-    document.getElementById("emissionsReportTableWrapper").appendChild(table);
-  }
-
-  function clearResults() {
-    clearPolyline();
-    document.getElementById("emissionsReportTableWrapper").innerHTML = "";
-    $("#summaryTable").empty();
-  }
-  function getRow(columns) {
-    let row = "";
-    columns.forEach((col) => {
-      row += "<td>" + col + "</td>";
-    });
-    return "<tr>" + row + "</tr>";
-  }
-
-  function displaySummary(result) {
-    $("#summaryTable").append(
-      $.parseHTML(getRow(["Distance", convertDistance(result.distance)]))
-    );
-    $("#summaryTable").append(
-      $.parseHTML(getRow(["Travel Time", convertTime(result.travelTime)]))
-    );
-  }
 
   function addControls() {
     const routingControl = L.control({ position: "topleft" });
@@ -269,26 +65,36 @@ $(document).ready(function () {
       const html = `
             <h2>Emission Calculation</h2>
             <div>
+                <h3>Emission Options</h3>
                 <div>
-                    <label for="emissionProfile" style="display: block;">Emission Calculation Method</label>
-                    <select name="emissionProfile" id="emissionProfile" style="display: block; width: 100%;">
-                        <option value="EMISSIONS_ISO14083_2023">ISO14083_2023</option>
-                        <option value="EMISSIONS_ISO14083_2023_DEFAULT_CONSUMPTION">ISO14083_2023_DEFAULT_CONSUMPTION</option>                    
-                        <option value="EMISSIONS_EN16258_2012">EN16258_2012</option>
-                        <option value="EMISSIONS_EN16258_2012_HBEFA">EN16258_2012_HBEFA</option>
-                        <option value="EMISSIONS_FRENCH_CO2E_DECREE_2017_639">FRENCH_CO2E_DECREE_2017_639</option>
+                    <label for="emissionCalculationMethod" style="display: block;">Emission Calculation Method</label>
+                    <select name="emissionCalculationMethod" id="emissionCalculationMethod" style="display: block; width: 100%;">
+                        <option value="ISO14083_2023">ISO14083_2023</option>                 
+                        <option value="EN16258_2012">EN16258_2012</option>
+                        <option value="FRENCH_CO2E_DECREE_2017_639">FRENCH_CO2E_DECREE_2017_639</option>
                     </select>
                 </div>
+                <div>
+                    <label for="emissionVersion" style="display: block;">ISO14083 Factors Version</label>
+                    <select name="emissionVersion" id="emissionVersion" style="display: block; width: 100%;">
+                        <option value="INITIAL">INITIAL</option>                 
+                        <option value="VERSION_2">VERSION_2</option>
+                        <option value="LATEST">LATEST</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="defaultConsumption" style="display: block;">Default Consumption</label>
+                    <input type="checkbox" name="defaultConsumption" id="defaultConsumption" style="display: block;"/>
+                </div>
+                <h3>Vehicle Options</h3>
                 <div>
                     <label for="vehicleProfile" style="display: block;">Vehicle Profile</label>
                     <select name="vehicleProfile" id="vehicleProfile" style="display: block; width: 100%;">
-                        ${profiles.map((profile) => {
-                          return `<option value="${profile.name}">${profile.name}</option>`;
-                        })}
+                        ${profiles.map((profile) => `<option value="${profile.name}">${profile.name}</option>`)}
                     </select>
                 </div>
                 <div>
-                    <label for="engineType" id="engineTypeLabel" style="display: block;">Fuel Type</label>
+                    <label for="engineType" id="engineTypeLabel" style="display: block;">Engine Type</label>
                     <select name="engineType" id="engineType" style="display: block; width: 100%;">
                         <option value="COMBUSTION">COMBUSTION</option>
                         <option value="HYBRID">HYBRID</option>
@@ -331,15 +137,15 @@ $(document).ready(function () {
                 <div>
                     <label for="electricityType" id="electricityTypeLabel" style="display: block;">Electricity Type</label>
                     <select name="electricityType" id="electricityType" style="display: block; width: 100%;">
-                    <option value="BATTERY">BATTERY</option>
-                    <option value="HYDROGEN_FUEL_CELL">HYDROGEN_FUEL_CELL</option>
-                    <option value="NONE">None</option>
+                        <option value="BATTERY">BATTERY</option>
+                        <option value="HYDROGEN_FUEL_CELL">HYDROGEN_FUEL_CELL</option>
+                        <option value="NONE" selected>NONE</option>
                     </select>
                 </div>
                 <div>
                     <label for="averageFuelConsumption" id="averageFuelConsumptionLabel" style="display: block;">Fuel Consumption (l / 100km)</label>
                     <input type="number" id="averageFuelConsumption" name="averageFuelConsumption" style= "width: 100%;"
-                    min="1" step="1" value="15" max="100">
+                    min="1" step="1" value="35" max="100">
                 </div>
                 <div>
                     <label for="averageElectricityConsumption" id="averageElectricityConsumptionLabel" style="display: block;">Electric Consumption (kWh / 100km)</label>
@@ -371,99 +177,150 @@ $(document).ready(function () {
       return div;
     };
     routingControl.addTo(map);
-    document
-      .getElementById("emissionProfile")
-      .addEventListener("change", fetchRoute);
-    document
-      .getElementById("vehicleProfile")
-      .addEventListener("change", fetchRoute);
-    document
-      .getElementById("engineType")
-      .addEventListener("change", calculateRoute);
-    document
-      .getElementById("fuelType")
-      .addEventListener("change", calculateRoute);
-    document
-      .getElementById("emissionStandards")
-      .addEventListener("change", calculateRoute);
-    document
-      .getElementById("electricityType")
-      .addEventListener("change", calculateRoute);
-    document
-      .getElementById("averageFuelConsumption")
-      .addEventListener("change", calculateRoute);
-    document
-      .getElementById("averageElectricityConsumption")
-      .addEventListener("change", calculateRoute);
-    document
-      .getElementById("dualFuelRatio")
-      .addEventListener("change", calculateRoute);
-    document
-      .getElementById("bioFuelRatio")
-      .addEventListener("change", calculateRoute);
-    document
-      .getElementById("hybridRatio")
-      .addEventListener("change", calculateRoute);
+    document.getElementById("emissionCalculationMethod").addEventListener("change", onEmissionCalculationMethodChanged);
+    document.getElementById("vehicleProfile").addEventListener("change", onVehicleProfileChanged);
+    const routeCalculationTriggers = ["emissionVersion", "defaultConsumption", "engineType", "fuelType",
+      "emissionStandards", "electricityType", "averageFuelConsumption", "averageElectricityConsumption", "dualFuelRatio",
+      "bioFuelRatio", "hybridRatio"];
+    routeCalculationTriggers.forEach(id => document.getElementById(id).addEventListener("change", calculateRoute));
   }
 
-  // UI controls
-  function addSummaryControl() {
-    const summaryControl = L.control({ position: "topright" });
-    summaryControl.onAdd = function (map) {
-      const div = L.DomUtil.create("div", "summary-control");
-      const html = `
-            <h2>Summary</h2>
-            <div id="summaryTableWrapper">
-                <table id="summaryTable"></table>
-            </div>
-        `;
-      div.innerHTML = html;
+  // Call the Routing API
 
-      L.DomEvent.disableScrollPropagation(div);
-      L.DomEvent.disableClickPropagation(div);
-
-      return div;
-    };
-    summaryControl.addTo(map);
+  function calculateRoute() {
+    const waypoints = [];
+    map.eachLayer((layer) => {
+      if (layer instanceof L.Marker) {
+        waypoints.push(layer._latlng);
+      }
+    });
+    if (waypoints.length > 1) {
+      fetch(routesURL + getQuery(waypoints),
+        { method: "GET", headers: { "Content-Type": "application/json", apiKey: api_key } }
+      ).then((response) =>
+        response.json().then((result) => {
+          clearResults();
+          displayPolyline(JSON.parse(result.polyline));
+          displayResults(result);
+        })
+      );
+    } else {
+      clearResults();
+    }
   }
 
-  function addEmissionsResultControl() {
-    const resultControl = L.control({ position: "topright" });
-    resultControl.onAdd = function (map) {
-      const div = L.DomUtil.create("div", "result-control-left");
-      const html = `
-            <h2>Emissions</h2>
-            <div id="emissionsReportTableWrapper">
-                <table id="emissionsCostsTable"></table>
-            </div>
-        `;
-      div.innerHTML = html;
+  function getQuery(waypoints) {
+    let query = "?results=POLYLINE";
 
-      L.DomEvent.disableScrollPropagation(div);
-      L.DomEvent.disableClickPropagation(div);
+    query += "&emissionOptions[calculationMethods]=" + document.getElementById("emissionCalculationMethod").value;
+    query += "&emissionOptions[iso14083EmissionFactorsVersion]=" + document.getElementById("emissionVersion").value;
+    query += "&emissionOptions[defaultConsumption]=" + document.getElementById("defaultConsumption").checked;
 
-      return div;
-    };
-    resultControl.addTo(map);
+    query += "&profile=" + document.getElementById("vehicleProfile").value;
+    query += "&vehicle[averageElectricityConsumption]=" + document.getElementById("averageElectricityConsumption").value;
+    query += "&vehicle[engineType]=" + document.getElementById("engineType").value;
+    query += "&vehicle[electricityType]=" + document.getElementById("electricityType").value;
+    query += "&vehicle[dualFuelRatio]=" + document.getElementById("dualFuelRatio").value;
+    query += "&vehicle[emissionStandard]=" + document.getElementById("emissionStandards").value;
+    query += "&vehicle[bioFuelRatio]=" + document.getElementById("bioFuelRatio").value;
+    query += "&vehicle[hybridRatio]=" + document.getElementById("hybridRatio").value;
+    query += "&vehicle[averageFuelConsumption]=" + document.getElementById("averageFuelConsumption").value;
+    query += "&vehicle[fuelType]=" + document.getElementById("fuelType").value;
+
+    waypoints.forEach((waypoint) => {
+      query += "&waypoints=" + waypoint.lat + "," + waypoint.lng;
+    });
+    return query;
   }
 
-  function addDescriptionBanner() {
-    const banner = L.control({ position: "bottomleft" });
-    banner.onAdd = function (map) {
-      const div = L.DomUtil.create("div", "banner");
-      const html = `
-            <p>
-                Left click to add waypoints and right click to remove them.<br>
-                The waypoint order is determined by the order of their creation.
-            </p>
-        `;
-      div.innerHTML = html;
+  var polylineLayer = null;
 
-      L.DomEvent.disableScrollPropagation(div);
-      L.DomEvent.disableClickPropagation(div);
+  function displayPolyline(polyline) {
+    polylineLayer = L.geoJSON(polyline,
+      {style: { color: "#2882C8", weight: 5, opacity: 0.65 }}
+    ).addTo(map);
 
-      return div;
-    };
-    banner.addTo(map);
+    map.fitBounds(polylineLayer.getBounds());
+  }
+
+  function onEmissionCalculationMethodChanged() {
+    const calculationMethod = document.getElementById("emissionCalculationMethod").value;
+    document.getElementById("emissionVersion").disabled = calculationMethod !== "ISO14083_2023";
+    document.getElementById("defaultConsumption").disabled = calculationMethod === "FRENCH_CO2E_DECREE_2017_639";
+    calculateRoute();
+  }
+
+  function onVehicleProfileChanged() {
+    const profileName = document.getElementById("vehicleProfile").value;
+    const profile = profiles.find((e) => e.name === profileName);
+    if (profile?.vehicle?.fuelType && profile?.vehicle?.averageFuelConsumption) {
+      document.getElementById("fuelType").value = profile.vehicle.fuelType;
+      document.getElementById("averageFuelConsumption").value = profile.vehicle.averageFuelConsumption;
+    }
+    calculateRoute();
+  }
+
+  // How to display the result
+
+  const resultControl = L.control({ position: "topright" });
+  resultControl.onAdd = function (map) {
+    const div = L.DomUtil.create("div", "result-control-left");
+    const html = `
+          <h2>Summary</h2>
+          <div id="summaryTableWrapper">
+              <table id="summaryTable"></table>
+          </div>
+          <h2>Emissions</h2>
+          <div id="emissionsReportTableWrapper">
+              <table id="emissionsCostsTable"></table>
+          </div>
+      `;
+    div.innerHTML = html;
+
+    L.DomEvent.disableScrollPropagation(div);
+    L.DomEvent.disableClickPropagation(div);
+
+    return div;
+  };
+  resultControl.addTo(map);
+
+  const units = {
+    fuelConsumption: "kg",
+    co2eTankToWheel: "kg",
+    co2eWellToWheel: "kg",
+    energyUseTankToWheel: "MJ",
+    energyUseWellToWheel: "MJ",
+    electricityConsumption: "kWh",
+  };
+
+  function displayResults(result) {
+    $("#summaryTable")
+      .append(getRow(["Distance", convertDistance(result.distance)]))
+      .append(getRow(["Travel Time", convertTime(result.travelTime)]));
+    $("#emissionsCostsTable")
+      .append(getRow(["<b>Type</b>", "<b>Amount</b>"]));
+    Object.keys(result.emissions).forEach((emissionResultKey) => {
+      const emissionResult = result.emissions[emissionResultKey];
+      Object.keys(emissionResult).forEach((key) =>
+        $("#emissionsCostsTable")
+          .append(getRow([key, `${emissionResult[key].toFixed(4)} ${units[key]}`]))
+      )
+    });
+  }
+
+  function clearResults() {
+    if (polylineLayer) {
+      map.removeLayer(polylineLayer);
+    }
+    $("#summaryTable").empty();
+    $("#emissionsCostsTable").empty();
+  }
+
+  function getRow(columns) {
+    let row = "";
+    columns.forEach((col) => {
+      row += "<td>" + col + "</td>";
+    });
+    return $.parseHTML("<tr>" + row + "</tr>");
   }
 });
