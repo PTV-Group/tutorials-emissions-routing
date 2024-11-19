@@ -19,7 +19,7 @@ $(document).ready(function () {
   L.control.zoom({ position: "bottomright" }).addTo(map);
 
   L.tileLayer(tileURL, {
-      attribution: "© " + new Date().getFullYear() + ", PTV Group, HERE",
+      attribution: "© " + new Date().getFullYear() + ", PTV Logistics, HERE",
       tileSize: 256,
       trackResize: false,
     },
